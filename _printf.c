@@ -1,48 +1,67 @@
+#include <stdarg.h>
+#include <stdio.h>
+#include <unistd.h>
 #include "main.h"
 
 /**
- * _printf - produces output according to a format
- * @format: format string containing the characters and the specifiers
- * Description: this function will call the get_print() function that will
- * determine which printing function to call depending on the conversion
- * specifiers contained into fmt
- * Return: length of the formatted output string
- * Authors: Ehoneah Obed & Abdulhakeem Badejo
+ * _printf - prints a string in a formatted way
+ * @format: string to print (char *)
+ * @...: variadic parameters (unknown)
+ *
+ * Return: number of characters printed
  */
+
 int _printf(const char *format, ...)
 {
-	int (*pfunc)(va_list, flags_t *);
-	const char *p;
-	va_list arguments;
-	flags_t flags = {0, 0, 0};
-
-	register int count = 0;
-
-	va_start(arguments, format);
-	if (!format || (format[0] == '%' && !format[1]))
+	int i = 0;
+	int count = 0;
+	int value = 0;
+	va_list args;
+	va_start(args, format);
+	int (*f)(va_list);
+	
+	/*Prevent parsing a null pointer*/
+	if (format == NULL)
 		return (-1);
-	if (format[0] == '%' && format[1] == ' ' && !format[2])
-		return (-1);
-	for (p = format; *p; p++)
-	{
-		if (*p == '%')
+	
+	/*Print each character of string*/
+	while (format[i])
+	{	
+		if (format[i] != '%')
 		{
-			p++;
-			if (*p == '%')
+			value = write(1,&format[i],1);
+			count = count + value;
+			i++;
+			continue;
+		}
+
+		if (format[i] == '%')
+		{
+			f = check_specifier(&format[i + 1]);
+			if (f != NULL)
 			{
-				count += _putchar('%');
+				value = f(args);
+				count = count + value;
+				i = i + 2;
 				continue;
 			}
-			while (get_flag(*p, &flags))
-				p++;
-			pfunc = get_print(*p);
-			count += (pfunc)
-				? pfunc(arguments, &flags)
-				: _printf("%%%c", *p);
-		} else
-			count += _putchar(*p);
+
+			if (format[i + 1] == '\0')
+			{
+				break;
+			}
+
+			if (format[i + 1] != '\0')
+			{
+				value = write(1, &format[i + 1], 1);
+				count = count + value;
+                        	i = i + 2;
+                        	continue;
+			}
+
+
+		}
 	}
-	_putchar(-1);
-	va_end(arguments);
+
 	return (count);
 }
